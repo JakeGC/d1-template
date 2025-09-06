@@ -1,0 +1,135 @@
+# =============================================
+# wrangler.toml - Cloudflare Worker Configuration
+# =============================================
+
+name = "nfl-predictions-api"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Worker Routes (customize for your domain)
+routes = [
+  { pattern = "your-domain.com/api/*", zone_name = "your-domain.com" },
+  { pattern = "your-domain.pages.dev/api/*" }
+]
+
+# Environment Variables
+[vars]
+ENVIRONMENT = "production"
+API_VERSION = "v1"
+
+# D1 Database Binding
+[[d1_databases]]
+binding = "DB" # This is how you'll access it in your worker (env.DB)
+database_name = "nfl-predictions-db"
+database_id = "your-database-id-here" # Get this from: wrangler d1 list
+
+# KV Namespace for caching (optional but recommended)
+[[kv_namespaces]]
+binding = "KV_CACHE"
+id = "your-kv-namespace-id-here" # Get this from: wrangler kv:namespace list
+
+# Rate Limiting (optional)
+[limits]
+cpu_ms = 50
+
+# =============================================
+# package.json - Dependencies
+# =============================================
+
+{
+  "name": "nfl-predictions-worker",
+  "version": "1.0.0",
+  "description": "Cloudflare Worker API for NFL game predictions",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:create": "wrangler d1 create nfl-predictions-db",
+    "db:migrate": "wrangler d1 execute nfl-predictions-db --file=./schema.sql",
+    "db:migrate:local": "wrangler d1 execute nfl-predictions-db --local --file=./schema.sql",
+    "kv:create": "wrangler kv:namespace create KV_CACHE",
+    "test": "wrangler dev --test"
+  },
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  }
+}
+
+# =============================================
+# DEPLOYMENT COMMANDS
+# =============================================
+
+# 1. Create D1 database
+# wrangler d1 create nfl-predictions-db
+
+# 2. Get the database ID and update wrangler.toml
+# wrangler d1 list
+
+# 3. Create KV namespace for caching
+# wrangler kv:namespace create KV_CACHE
+
+# 4. Get KV namespace ID and update wrangler.toml
+# wrangler kv:namespace list
+
+# 5. Apply database schema
+# wrangler d1 execute nfl-predictions-db --file=./schema.sql
+
+# 6. Deploy the worker
+# wrangler deploy
+
+# =============================================
+# LOCAL DEVELOPMENT COMMANDS
+# =============================================
+
+# Start local development server
+# wrangler dev
+
+# Apply schema to local database
+# wrangler d1 execute nfl-predictions-db --local --file=./schema.sql
+
+# Query local database
+# wrangler d1 execute nfl-predictions-db --local --command="SELECT * FROM predictions LIMIT 5"
+
+# =============================================
+# USEFUL WRANGLER COMMANDS
+# =============================================
+
+# View worker logs
+# wrangler tail
+
+# View D1 database info
+# wrangler d1 info nfl-predictions-db
+
+# Query production database
+# wrangler d1 execute nfl-predictions-db --command="SELECT COUNT(*) FROM predictions"
+
+# Backup database
+# wrangler d1 export nfl-predictions-db --output=backup.sql
+
+# Delete all data from a table (be careful!)
+# wrangler d1 execute nfl-predictions-db --command="DELETE FROM predictions"
+
+# =============================================
+# ENVIRONMENT-SPECIFIC CONFIGURATIONS
+# =============================================
+
+# For staging environment
+[env.staging]
+name = "nfl-predictions-api-staging"
+vars = { ENVIRONMENT = "staging" }
+
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "nfl-predictions-db-staging"
+database_id = "your-staging-database-id"
+
+# For development environment  
+[env.development]
+name = "nfl-predictions-api-dev"
+vars = { ENVIRONMENT = "development" }
+
+[[env.development.d1_databases]]
+binding = "DB"
+database_name = "nfl-predictions-db-dev" 
+database_id = "your-dev-database-id"
